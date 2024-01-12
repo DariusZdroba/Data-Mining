@@ -23,7 +23,7 @@ schema = Schema(
 index_path = "wikipedia_index"
 if not os.path.exists(index_path):
     os.makedirs(index_path)
-documentsPath = "C:\\Users\\Darius\\Downloads\\Wiki\\wiki-subset-20140602.tar"
+documentsPath = "wiki-subset-20140602.tar"
 
 
 # Function to extracst title and content from each document
