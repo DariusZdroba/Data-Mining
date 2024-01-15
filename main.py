@@ -1,5 +1,7 @@
 import os
 import re
+import time
+from openai import OpenAI
 from whoosh import index
 from whoosh.fields import TEXT, Schema, ID
 from whoosh.qparser import QueryParser
@@ -11,7 +13,9 @@ from whoosh.query import And, Or
 
 nltk.download("punkt")
 nltk.download("stopwords")
-
+client = OpenAI(
+    api_key=""
+)
 
 ps = PorterStemmer()
 stop_words = set(stopwords.words("english"))
@@ -61,12 +65,25 @@ def create_index():
                     writer.add_document(title=title[i], content=cnt)
     ix.close()
 
+def call_gpt(gptString):
+    response = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": gptString,
+            }
+        ],
+        model="gpt-3.5-turbo",
+    )
+    return response['choices'][0]['message']['content']
+
 # Searching the index
 def search_index(withCategory = False):
     categories, clues, titles = questions()
     ix = index.open_dir(index_path)
     query_parser = QueryParser("content", ix.schema)
     matches = 0
+    gptMatches = 0
     for i in range(len(clues)):
         c = nltk.word_tokenize(clues[i])
         c = [ps.stem(word) for word in c if ((word.lower() not in stop_words) and (word.isalnum()))]
@@ -79,9 +96,18 @@ def search_index(withCategory = False):
         combined_query = Or(word_queries)
         with ix.searcher() as searcher:
             results = searcher.search(combined_query)
+            gptResult = [results[j]["title"] for j in range(10)]
+            gptString = "Choose one of the following item from the list "+ str(gptResult) + " without any aditional text using the following clue: \"" +str(clues[i]) +"\".No aditional text!!!"
+            print(gptString)
+            print(titles[i])
             if len(results) > 0 and results[0]["title"] == titles[i]:
                 matches = matches + 1
+           # if len(results) > 0:
+           #     res = call_gpt(gptString)
+          #      if res == titles[i]:
+           #         gptMatches = gptMatches + 1
     print(matches / len(clues))
+    print(gptMatches / len(clues))
 def questions():
     with open("questions.txt", "r", encoding="utf-8") as file:
         content = file.read()
