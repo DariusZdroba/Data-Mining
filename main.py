@@ -131,7 +131,7 @@ def questions():
 # Or creating the index files, if they already exist, they will be overwritten.
 createIndex = True
 
-if not createIndex:
+if createIndex:
     create_index()
 else:
     # Altering the value in search_index will alter if the category is used or not in the search.
